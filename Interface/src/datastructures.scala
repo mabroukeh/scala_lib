@@ -19,7 +19,7 @@ object List {
   // Exercise 3.4
   def drop[A](l: List[A], n: Int): List[A] = {
     if (n <= 0) l
-      // with short circuiting for Nil: if (n<= 0 || (l match {case Nil => true})) l
+    // with short circuiting for Nil: if (n<= 0 || (l match {case Nil => true})) l
     else drop(tail(l), n-1)
   }
 
@@ -36,8 +36,12 @@ object List {
   // same as foldRight(as, bs)((x, y) => Const(x, y))
 
   // Exercise 3.15
-  def flatten[A](l: List[List[A]]): List[A] =
+  def flattenWithFoldRight[A](l: List[List[A]]): List[A] =
     foldRight(l, Nil:List[A])(append2)
+
+  // Exercise 3.15.b
+  def flatten[A](l: List[List[A]]): List[A] =
+    foldLeft(l, Nil:List[A])(append2)
 
   // Exercise 3.16
   def addOne[A](l: List[Int]): List[Int] =
@@ -47,6 +51,10 @@ object List {
   def map[A, B](as: List[A])(f: A => B): List[B] =
     foldRight(as, List[B]())((x, y) => Const(f(x), y))
 
+  // Exercise 3.20
+  def flatMap[A,B](l: List[A])(f: A => List[B]): List[B] =
+    flatten(map(l)(f))
+
   //Exercise 3.17
   def toString(as: List[Double]): List[String] =  // can replace the Double with Number
     map(as)(_.toString)
@@ -54,71 +62,75 @@ object List {
   //Exercise 3.19
   def filter[A](as: List[A])(f: A => Boolean): List[A] =
     as match {
-      case (h ,t) =>
+      case Const(h ,t) =>
         if (f(h)) Const(h, filter(t)(f))
         else filter(t)(f)
       case _ => Nil
     }
 
+  // Exercise 3.21
+  def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] =
+    flatMap(l)(x => if (f(x)) Nil else List(x))
+
   // Exercise 3.5.2
   def dropWhile[A](l: List[A], f: A => Boolean): List[A] =
-   l match {
-     case Nil => l
-     case Const(h ,t) => if (f(h)) dropWhile(t, f)
-     else Const(h, dropWhile(t, f))
-     /*
-       another implementation of dropWhile is:
-       def dropWhile[A](as: List[A])(f: A => Boolean): List[A] =
-        as match {
-          case Cons(h,t) if f(h) => dropWhile(t)(f)
-          case _ => as
-        }
-      The syntax for calling this version of dropWhile looks like dropWhile(xs)(f).
-      That is, dropWhile(xs) is returning a function, which we then call with the argument f (in other words, dropWhile is curried)
+    l match {
+      case Nil => l
+      case Const(h ,t) => if (f(h)) dropWhile(t, f)
+      else Const(h, dropWhile(t, f))
+      /*
+        another implementation of dropWhile is:
+        def dropWhile[A](as: List[A])(f: A => Boolean): List[A] =
+         as match {
+           case Cons(h,t) if f(h) => dropWhile(t)(f)
+           case _ => as
+         }
+       The syntax for calling this version of dropWhile looks like dropWhile(xs)(f).
+       That is, dropWhile(xs) is returning a function, which we then call with the argument f (in other words, dropWhile is curried)
 
-      val xs: List[Int] = List(1,2,3,4,5)
-      val ex1 = dropWhile(xs)(x => x < 4)
+       val xs: List[Int] = List(1,2,3,4,5)
+       val ex1 = dropWhile(xs)(x => x < 4)
 
-      Note that x is not annotated with its type anymore
-        */
-     /*
-     Exercise 5 example:
-     scala> def equalTwo(a: Int): Boolean =
-          | a==2
-     equalTwo: (a: Int)Boolean
+       Note that x is not annotated with its type anymore
+         */
+      /*
+      Exercise 5 example:
+      scala> def equalTwo(a: Int): Boolean =
+           | a==2
+      equalTwo: (a: Int)Boolean
 
-     scala> equalTwo(3)
-     res3: Boolean = false
+      scala> equalTwo(3)
+      res3: Boolean = false
 
-     scala> val l = List(1,2,3,4,5,6)
-     l: List[Int] = Const(1,Const(2,Const(3,Const(4,Const(5,Const(6,Nil))))))
+      scala> val l = List(1,2,3,4,5,6)
+      l: List[Int] = Const(1,Const(2,Const(3,Const(4,Const(5,Const(6,Nil))))))
 
-     scala> l
-     res4: List[Int] = Const(1,Const(2,Const(3,Const(4,Const(5,Const(6,Nil))))))
+      scala> l
+      res4: List[Int] = Const(1,Const(2,Const(3,Const(4,Const(5,Const(6,Nil))))))
 
-     scala> List.dropWhile(l, equalTwo)
-     res5: List[Int] = Const(1,Const(3,Const(4,Const(5,Const(6,Nil)))))
+      scala> List.dropWhile(l, equalTwo)
+      res5: List[Int] = Const(1,Const(3,Const(4,Const(5,Const(6,Nil)))))
 
-     scala> List.dropWhile(l, equalTwo)
-     res6: List[Int] = Const(1,Const(3,Const(4,Const(5,Const(6,Nil)))))
+      scala> List.dropWhile(l, equalTwo)
+      res6: List[Int] = Const(1,Const(3,Const(4,Const(5,Const(6,Nil)))))
 
-     scala> l
-     res7: List[Int] = Const(1,Const(2,Const(3,Const(4,Const(5,Const(6,Nil))))))
+      scala> l
+      res7: List[Int] = Const(1,Const(2,Const(3,Const(4,Const(5,Const(6,Nil))))))
 
-     scala> List.dropWhile(l, equalTwo)
-     res8: List[Int] = Const(1,Const(3,Const(4,Const(5,Const(6,Nil)))))
+      scala> List.dropWhile(l, equalTwo)
+      res8: List[Int] = Const(1,Const(3,Const(4,Const(5,Const(6,Nil)))))
 
-     scala> def greaterThanFour(a: Int): Boolean =
-          | a>4
-     greaterThanFour: (a: Int)Boolean
+      scala> def greaterThanFour(a: Int): Boolean =
+           | a>4
+      greaterThanFour: (a: Int)Boolean
 
-     scala> List.dropWhile(l, greaterThanFour)
-     res9: List[Int] = Const(1,Const(2,Const(3,Const(4,Nil))))
+      scala> List.dropWhile(l, greaterThanFour)
+      res9: List[Int] = Const(1,Const(2,Const(3,Const(4,Nil))))
 
-     scala> List.dropWhile(List.dropWhile(l, equalTwo), greaterThanFour)
-     res10: List[Int] = Const(1,Const(3,Const(4,Nil)))
-      */
-   }
+      scala> List.dropWhile(List.dropWhile(l, equalTwo), greaterThanFour)
+      res10: List[Int] = Const(1,Const(3,Const(4,Nil)))
+       */
+    }
 
   @annotation.tailrec
   def dropWhile2[A](as: List[A], f: A => Boolean): List[A] =
@@ -135,12 +147,12 @@ object List {
       else Const(h, init(t))
     }
 
-    // Exercise 3.3
+  // Exercise 3.3
   def setHead[A](h: A, a: List[A]): List[A] = a match {
     case Nil => Const(h, Nil)
     case Const(x, xs) => Const(h, tail(a))
-      // or case Const(x, xs) => Const(h, xs)
-      // or case Const(_, xs) => Const(h, xs)
+    // or case Const(x, xs) => Const(h, xs)
+    // or case Const(_, xs) => Const(h, xs)
   }
 
   def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B =
@@ -149,12 +161,11 @@ object List {
       case Const(x, xs) => f(x, foldRight(xs, z)(f))
     }
 
-  def foldLeft[A,B](as: List[A], z: B)(f: (B, A) => B): B =
-    as match {
-      case _ => z
-      //case Const(_, xs) => f(z, foldLeft(xs, z)(f))
-      case Const(x, xs) => foldLeft(xs, f(z, x))(f)
-    }
+
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = l match {
+    case Nil => z
+    case Const(h, l) => foldLeft(l, f(z, h))(f)
+  }
 
   def sum2(ns: List[Int]): Int =
     foldRight(ns, 0)((x, y) => x + y)
@@ -188,9 +199,9 @@ object List {
   }
 
   def length[A](as: List[A]): Int =
-      foldRight(as, 0)((x, y) => if (x!=Nil) 1 + y
-                                 else 0
-                      )
+    foldRight(as, 0)((x, y) => if (x!=Nil) 1 + y
+    else 0
+    )
 
   def length2[A](as: List[A]): Int =
     as match {
@@ -200,7 +211,6 @@ object List {
 
   def reverseLeft[A](l: List[A]): List[A] =
     foldLeft(l, Nil:List[A])((x,y) => Const(y,x))
-
 
   def apply[A](as: A*): List[A] =
     if (as.isEmpty) Nil
