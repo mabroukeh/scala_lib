@@ -72,6 +72,19 @@ object List {
   def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] =
     flatMap(l)(x => if (f(x)) Nil else List(x))
 
+  // Exercise 3.22, can we do this with flatmap
+  def addIntLists(l1: List[Int], l2: List[Int]): List[Int] = (l1, l2) match {
+    case (Nil, Nil) => Nil
+    case (Const(h1, t1), Const(h2, t2)) => Const(h1 + h2, addIntLists(t1, t2))
+  }
+
+  // Exercise 3.22
+  def zipWith[A](l1: List[A], l2: List[A])(f: (A, A) => A): List[A] = (l1, l2) match {
+    case (Nil, Nil) => Nil
+    case (Const(h1, t1), Const(h2, t2)) => Const(f(h1, h2), zipWith(t1, t2)(f))
+  } // text as: scala> List.zipWith(List(1,2,3), List(1,2,3))( (x,y) => x+y)
+
+
   // Exercise 3.5.2
   def dropWhile[A](l: List[A], f: A => Boolean): List[A] =
     l match {
